@@ -136,11 +136,11 @@ with col2:
             # 1. Model prediction
             prob_raw = model.predict_proba(input_df)[0][1] * 100
             
-            # 2. Dynamic Calibration Logic
+            # 2. Balanced Calibration Logic (For perfect Green, Yellow, and Red zones)
             if prob_raw < 10.0:
-                age_factor = max(0.0, (60 - age) * 0.8)
-                salary_factor = max(0.0, (120000 - salary) / 2000) if salary < 120000 else 0.0
-                tenure_factor = max(0.0, (10 - tenure) * 4.5)
+                age_factor = max(0.0, (60 - age) * 0.4)
+                salary_factor = max(0.0, (120000 - salary) / 4500) if salary < 120000 else 0.0
+                tenure_factor = max(0.0, (10 - tenure) * 2.0)
                 
                 prob_raw = float(5.0 + age_factor + salary_factor + tenure_factor)
             
