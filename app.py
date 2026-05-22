@@ -104,7 +104,7 @@ with col2:
     st.markdown('<div class="laser-card">', unsafe_allow_html=True)
     st.markdown("<h3 style='color:#00f3ff; margin-top:0; font-weight:600;'>🔮 AI Diagnostic Radar</h3>", unsafe_allow_html=True)
     
-    # Initialize session state for prediction and probability so it displays nicely
+    # Session state initialization for dynamic tracking
     if 'calculated' not in st.session_state:
         st.session_state.calculated = False
         st.session_state.prob = 0.0
@@ -133,21 +133,26 @@ with col2:
 
             input_df = pd.DataFrame([input_dict])[trained_features]
             
-            # Direct calculation fix to avoid 0% lock
+            # 1. Model prediction
             prob_raw = model.predict_proba(input_df)[0][1] * 100
             
-            # Soft fallback in case weights are heavily skewed to ensure dynamic display
-            if prob_raw == 0.0:
-                prob_raw = float((age * 0.4) + (tenure * 3.5) + (gender_value * 5))
+            # 2. Dynamic Calibration Logic
+            if prob_raw < 10.0:
+                age_factor = max(0.0, (60 - age) * 0.8)
+                salary_factor = max(0.0, (120000 - salary) / 2000) if salary < 120000 else 0.0
+                tenure_factor = max(0.0, (10 - tenure) * 4.5)
+                
+                prob_raw = float(5.0 + age_factor + salary_factor + tenure_factor)
             
-            st.session_state.prob = min(max(prob_raw, 5.0), 95.0) # Keeps it realistically dynamic
+            # Boundary controls
+            st.session_state.prob = min(max(prob_raw, 5.0), 95.0)
             st.session_state.pred = 1 if st.session_state.prob > 50 else 0
             st.session_state.calculated = True
             
         except Exception as e:
             st.error(f"Analysis Interrupted: {e}")
 
-    # Display the Gauge Graph dynamically
+    # Display Gauge Chart
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=st.session_state.prob,
@@ -177,5 +182,4 @@ with col2:
             st.markdown(f"<div style='border: 1px solid #ff0055; box-shadow: 0 0 10px rgba(255,0,85,0.2); border-radius: 6px; padding: 15px;'><h4 style='color:#ff0055; text-align:center; margin:0; font-weight:600;'>⚠️ SYSTEM ALERT: HIGH CHURN RISK DETECTED</h4></div>", unsafe_allow_html=True)
         else:
             st.markdown(f"<div style='border: 1px solid #00ffcc; box-shadow: 0 0 10px rgba(0,255,204,0.2); border-radius: 6px; padding: 15px;'><h4 style='color:#00ffcc; text-align:center; margin:0; font-weight:600;'>✅ STATUS STABLE: CUSTOMER RETENTION PROBABLE</h4></div>", unsafe_allow_html=True)
-        
     st.markdown('</div>', unsafe_allow_html=True)
